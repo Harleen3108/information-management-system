@@ -1,152 +1,93 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, Building2, ShieldCheck, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { Shield, Eye, EyeOff, Sun, Moon, ArrowRight, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    const { login } = useAuth();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
-        
-        try {
-            await login(email, password);
-            navigate('/');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      await login(form.email, form.password);
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid credentials');
+    } finally { setLoading(false); }
+  };
 
-    return (
-        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-                <div className="absolute top-1/2 -right-24 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl"></div>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] flex items-center justify-center p-4 transition-colors">
+      {/* Theme toggle */}
+      <button onClick={toggleTheme} className="fixed top-4 right-4 p-2 hover:bg-gray-200/60 dark:hover:bg-zinc-800 rounded-lg text-gray-500 dark:text-zinc-400 transition-colors z-10" aria-label="Toggle theme">
+        {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+      </button>
+
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+          <div className="w-9 h-9 bg-gradient-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+            <Shield className="text-white w-5 h-5" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">IMS Portal</span>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm p-8">
+          <div className="text-center mb-6">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Sign in to your account</h1>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">Enter your credentials to continue</p>
+          </div>
+
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-red-50 dark:bg-red-900/15 border border-red-100 dark:border-red-900/30 rounded-xl">
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Email</label>
+              <input id="email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                className="w-full px-3 py-2.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                placeholder="you@company.com" required autoFocus />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Password</label>
+              <div className="relative">
+                <input id="password" type={showPass ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all pr-10"
+                  placeholder="••••••••" required />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300" tabIndex={-1}>
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-md w-full relative z-10"
-            >
-                {/* Logo Section */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-xl shadow-slate-200/50 mb-4 border border-slate-100">
-                        <Building2 className="text-primary w-8 h-8" />
-                    </div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">IMS Portal</h1>
-                    <p className="text-slate-500 mt-2">Information Management System</p>
-                </div>
-
-                {/* Login Card */}
-                <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200/60 p-8 border border-slate-100 backdrop-blur-sm">
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold text-slate-800">Welcome back</h2>
-                        <p className="text-slate-400 text-sm mt-1">Please enter your details to sign in.</p>
-                    </div>
-
-                    {error && (
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm border border-red-100 flex items-center mb-6"
-                        >
-                            <span className="flex-1 font-medium">{error}</span>
-                        </motion.div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all font-medium text-slate-900"
-                                    placeholder="name@company.com"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between items-center px-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Password</label>
-                                <button type="button" className="text-xs font-bold text-primary hover:underline">Forgot?</button>
-                            </div>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all font-medium text-slate-900"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 group overflow-hidden relative"
-                        >
-                            <AnimatePresence mode="wait">
-                                {isLoading ? (
-                                    <motion.div
-                                        key="loader"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                    >
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="text"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        className="flex items-center"
-                                    >
-                                        <span>Sign In to IMS</span>
-                                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </button>
-                    </form>
-
-                    <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                        <div className="flex items-center justify-center space-x-2 text-slate-400">
-                            <ShieldCheck className="w-4 h-4" />
-                            <span className="text-xs font-medium uppercase tracking-tighter">Enterprise Grade Security & RBAC</span>
-                        </div>
-                    </div>
-                </div>
-
-                <p className="text-center text-slate-400 text-sm mt-8">
-                    © 2026 IMS Information Management System. All rights reserved.
-                </p>
-            </motion.div>
+            <button type="submit" disabled={loading}
+              className="w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium text-sm shadow-sm shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><span>Sign In</span><ArrowRight className="w-4 h-4" /></>}
+            </button>
+          </form>
         </div>
-    );
+
+        <p className="text-center text-xs text-gray-400 dark:text-zinc-600 mt-6">
+          Information Management System · v2.0
+        </p>
+      </motion.div>
+    </div>
+  );
 };
 
 export default Login;

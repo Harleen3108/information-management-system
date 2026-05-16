@@ -9,7 +9,7 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description', 'manager_id'];
 
     public function users()
     {
@@ -19,5 +19,10 @@ class Department extends Model
     public function records()
     {
         return $this->hasMany(Record::class);
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
     }
 }

@@ -1,37 +1,136 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-border: #e2e8f0;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-primary: #3b82f6;
+  /* Primary palette – inspired by Linear's purple-blue */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-light: #eef2ff;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #1e293b;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #1e293b;
+
+  /* Neutrals */
+  --color-background: #fafbfc;
+  --color-foreground: #111827;
+  --color-border: #e5e7eb;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+  --color-secondary: #f9fafb;
+  --color-secondary-foreground: #1f2937;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #1f2937;
+  --color-input: #e5e7eb;
+  --color-ring: #6366f1;
+
+  /* Semantic */
   --color-destructive: #ef4444;
-  --color-destructive-foreground: #f8fafc;
-  --color-input: #e2e8f0;
-  --color-ring: #3b82f6;
-  
+  --color-destructive-foreground: #ffffff;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Dark surfaces */
+  --color-dark-bg: #09090b;
+  --color-dark-surface: #18181b;
+  --color-dark-surface2: #27272a;
+  --color-dark-border: #3f3f46;
+  --color-dark-text: #fafafa;
+  --color-dark-muted: #a1a1aa;
+
+  /* Radii */
+  --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.011em;
   }
+
+  .dark body,
+  body:where(.dark *) {
+    background-color: var(--color-dark-bg);
+    color: var(--color-dark-text);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+  .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 }
 
+/* ─── Utility Classes ───────────────────────────── */
+
 @utility glass {
-  background-color: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+@utility glass-dark {
+  background-color: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(63, 63, 70, 0.4);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@utility animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@utility animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@utility skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@utility skeleton-dark {
+  background: linear-gradient(90deg, #27272a 25%, #3f3f46 37%, #27272a 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
 }
