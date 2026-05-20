@@ -3,7 +3,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { Files, Plus, Search, Eye, Trash2, Send, Download } from 'lucide-react';
+import { Files, Plus, Search, Eye, Trash2, Send, Download, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -33,6 +33,7 @@ const Records = () => {
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState({ title: '', description: '', category_id: '', department_id: '', status: 'draft' });
   const [files, setFiles] = useState([]);
+  const [catExtensions, setCatExtensions] = useState([]);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
@@ -64,7 +65,22 @@ const Records = () => {
   useEffect(() => { fetchMeta(); }, []);
   useEffect(() => { fetchRecords(page); }, [page, debouncedSearch, statusFilter, deptFilter]);
 
-  const openCreate = () => { setForm({ title: '', description: '', category_id: '', department_id: '', status: 'draft' }); setFiles([]); setErrors({}); setShowModal(true); };
+  const openCreate = () => { setForm({ title: '', description: '', category_id: '', department_id: '', status: 'draft' }); setFiles([]); setCatExtensions([]); setErrors({}); setShowModal(true); };
+
+  const handleCategoryChange = (e) => {
+    const catId = e.target.value;
+    setForm(f => ({ ...f, category_id: catId }));
+    // Look up allowed extensions for this category
+    const cat = categories.find(c => String(c.id) === String(catId));
+    if (cat && cat.allowed_extensions) {
+      const exts = cat.allowed_extensions.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+      setCatExtensions(exts);
+    } else {
+      setCatExtensions([]);
+    }
+    // Clear previously picked files since restrictions may have changed
+    setFiles([]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setSaving(true); setErrors({});
@@ -125,7 +141,8 @@ const Records = () => {
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm text-gray-900 dark:text-zinc-100 outline-none min-w-[130px]">
           <option value="">All Status</option>
-          <option value="draft">Draft</option><option value="pending">Pending</option><option value="approved">Approved</option>
+          <option value="draft">Draft</option><option value="pending">Pending</option>
+          <option value="in_review">In Review</option><option value="approved">Approved</option>
           <option value="rejected">Rejected</option><option value="revision">Revision</option><option value="archived">Archived</option>
         </select>
         <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(1); }}
@@ -193,10 +210,18 @@ const Records = () => {
             <FormInput label="Title" id="rt" value={form.title} onChange={e => setForm({...form, title: e.target.value})} error={errors.title?.[0]} required />
             <TextArea label="Description" id="rd" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
             <div className="grid grid-cols-2 gap-4">
-              <SelectInput label="Category" id="rc" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} placeholder="Select category" options={categories.map(c => ({ value: c.id, label: c.name }))} error={errors.category_id?.[0]} />
+              <SelectInput label="Category" id="rc" value={form.category_id} onChange={handleCategoryChange} placeholder="Select category" options={categories.map(c => ({ value: c.id, label: c.name }))} error={errors.category_id?.[0]} />
               <SelectInput label="Department" id="rdp" value={form.department_id} onChange={e => setForm({...form, department_id: e.target.value})} placeholder="Select department" options={departments.map(d => ({ value: d.id, label: d.name }))} error={errors.department_id?.[0]} />
             </div>
-            <FileUpload label="Attachments" onChange={setFiles} multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+            {catExtensions.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
+                <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  This category only accepts: <span className="font-semibold">{catExtensions.map(e => e.toUpperCase()).join(', ')}</span> files
+                </p>
+              </div>
+            )}
+            <FileUpload label="Attachments" onChange={setFiles} multiple allowedExtensions={catExtensions} />
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-lg font-medium text-sm hover:bg-gray-200 dark:hover:bg-zinc-700">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium text-sm shadow-sm shadow-primary/20 disabled:opacity-50">{saving ? 'Creating...' : 'Create Record'}</button>

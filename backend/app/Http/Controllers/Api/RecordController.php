@@ -69,6 +69,26 @@ class RecordController extends Controller
     public function store(StoreRecordRequest $request)
     {
         return DB::transaction(function () use ($request) {
+            // Load category to check allowed extensions
+            $category = $request->category_id
+                ? \App\Models\Category::find($request->category_id)
+                : null;
+            $allowedExts = $category ? $category->allowed_extensions_array : [];
+
+            // Validate uploaded file extensions against category rules
+            if ($request->hasFile('files') && !empty($allowedExts)) {
+                foreach ($request->file('files') as $file) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    if (!in_array($ext, $allowedExts)) {
+                        $allowed = implode(', ', $allowedExts);
+                        return response()->json([
+                            'message' => "File \"" . $file->getClientOriginalName() . "\" is not allowed in the \"{$category->name}\" category. Allowed types: {$allowed}.",
+                            'errors' => ['files' => ["Only {$allowed} files are allowed in this category."]],
+                        ], 422);
+                    }
+                }
+            }
+
             $record = Record::create([
                 'title' => $request->title,
                 'description' => $request->description,
@@ -190,7 +210,7 @@ class RecordController extends Controller
         $this->logActivity('record_submitted', 'Record', $record->id);
 
         // Notify managers/admins
-        $managers = \App\Models\User::role(['Super Admin', 'Admin', 'Manager'])->get();
+        $managers = \App\Models\User::role(['Admin', 'Manager'])->get();
         foreach ($managers as $manager) {
             Notification::create([
                 'user_id' => $manager->id,

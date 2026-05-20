@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { Users as UsersIcon, Plus, Search, Edit3, Trash2, ShieldCheck, Shield, UserCog, UserCheck, Eye } from 'lucide-react';
+import { Users as UsersIcon, Plus, Search, Edit3, Trash2, ShieldCheck, Shield, UserCog, UserCheck, Eye, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import FormInput from '../components/ui/FormInput';
@@ -17,6 +18,7 @@ const TABS = ['All', 'Super Admin', 'Admin', 'Manager', 'Employee', 'Viewer'];
 const Users = () => {
   const toast = useToast();
   const { can } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -173,7 +175,8 @@ const Users = () => {
                       </button>
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex gap-0.5">
+                      <div className="flex gap-0.5">
+                         <button onClick={() => navigate(`/users/${u.id}`)} className="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg text-gray-400 hover:text-indigo-600" title="View Profile"><Eye className="w-3.5 h-3.5" /></button>
                         {canEdit && <button onClick={() => openEdit(u)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-400" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>}
                         {canDelete && <button onClick={() => { setDeleting(u); setShowDelete(true); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-gray-400 hover:text-red-600" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>}
                       </div>

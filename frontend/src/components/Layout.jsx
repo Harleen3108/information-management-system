@@ -6,7 +6,7 @@ import api from '../api/axios';
 import {
   LayoutDashboard, Files, Building2, Users, Settings, LogOut, Menu, X,
   Search, Bell, Activity, User, Tag, Sun, Moon, PanelLeftClose, PanelLeft,
-  ChevronDown, Shield,
+  ChevronDown, Shield, ClipboardList, BarChart2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -41,11 +41,19 @@ const Layout = ({ children }) => {
   const isSuperAdmin = hasAnyRole(['Super Admin']);
   const isFullAccess = hasAnyRole(['Super Admin', 'Admin', 'Manager']);
   const isEmployee = hasAnyRole(['Employee']);
+  const isManager  = hasAnyRole(['Manager']);
 
   const nav = [
     { section: 'Main' },
     { name: 'Dashboard', icon: LayoutDashboard, path: '/', visible: true },
     { name: 'Records', icon: Files, path: '/records', visible: true },
+    { name: 'Approvals', icon: ClipboardList, path: '/approvals', visible: isSuperAdmin || hasAnyRole(['Admin']) },
+    { section: 'Manager Panel', badge: isManager },
+    { name: 'Dashboard',  icon: LayoutDashboard,  path: '/manager/dashboard', visible: isManager },
+    { name: 'Approvals',  icon: ClipboardList,    path: '/manager/approvals', visible: isManager },
+    { name: 'Team Activity',icon: Users,          path: '/manager/team',      visible: isManager },
+    { name: 'Records',     icon: Files,           path: '/manager/records',   visible: isManager },
+    { name: 'Reports',     icon: BarChart2,       path: '/manager/reports',   visible: isManager },
     { section: 'Management' },
     { name: 'Users', icon: Users, path: '/users', visible: isFullAccess },
     { name: 'Departments', icon: Building2, path: '/departments', visible: isFullAccess },

@@ -16,7 +16,7 @@ class SettingController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$request->user()->hasRole('Super Admin')) {
+        if (!$request->user()->hasRole('Admin')) {
             return response()->json(['message' => 'You do not have permission to access system configuration.'], 403);
         }
 
@@ -32,7 +32,7 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
-        if (!$request->user()->hasRole('Super Admin')) {
+        if (!$request->user()->hasRole('Admin')) {
             return response()->json(['message' => 'You do not have permission to edit system configuration.'], 403);
         }
 

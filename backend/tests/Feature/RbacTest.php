@@ -18,16 +18,12 @@ class RbacTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $superAdmin;
     private User $admin;
     private User $manager;
     private User $employee;
-    private User $viewer;
-    private string $superAdminToken;
     private string $adminToken;
     private string $managerToken;
     private string $employeeToken;
-    private string $viewerToken;
     private Department $department;
     private Category $category;
 
@@ -37,17 +33,13 @@ class RbacTest extends TestCase
         $this->seed(RoleAndAdminSeeder::class);
         $this->seed(CategorySeeder::class);
 
-        $this->superAdmin = User::where('email', 'admin@ims.com')->first();
-        $this->admin = User::where('email', 'admin2@ims.com')->first();
+        $this->admin = User::where('email', 'admin@ims.com')->first();
         $this->manager = User::where('email', 'manager@ims.com')->first();
         $this->employee = User::where('email', 'employee@ims.com')->first();
-        $this->viewer = User::where('email', 'viewer@ims.com')->first();
 
-        $this->superAdminToken = $this->superAdmin->createToken('t')->plainTextToken;
         $this->adminToken = $this->admin->createToken('t')->plainTextToken;
         $this->managerToken = $this->manager->createToken('t')->plainTextToken;
         $this->employeeToken = $this->employee->createToken('t')->plainTextToken;
-        $this->viewerToken = $this->viewer->createToken('t')->plainTextToken;
 
         $this->department = Department::first();
         $this->category = Category::first();
@@ -55,23 +47,13 @@ class RbacTest extends TestCase
 
     // ── Permission assignment tests ──
 
-    public function test_super_admin_has_all_permissions(): void
-    {
-        $this->assertTrue($this->superAdmin->can('users.create'));
-        $this->assertTrue($this->superAdmin->can('records.approve'));
-        $this->assertTrue($this->superAdmin->can('settings.edit'));
-        $this->assertTrue($this->superAdmin->can('logs.view'));
-        $this->assertTrue($this->superAdmin->can('records.download'));
-    }
-
-    public function test_admin_has_full_operational_permissions(): void
+    public function test_admin_has_full_operational_and_settings_permissions(): void
     {
         $this->assertTrue($this->admin->can('users.create'));
         $this->assertTrue($this->admin->can('records.approve'));
         $this->assertTrue($this->admin->can('records.download'));
-        // Admin must NOT have settings access
-        $this->assertFalse($this->admin->can('settings.view'));
-        $this->assertFalse($this->admin->can('settings.edit'));
+        $this->assertTrue($this->admin->can('settings.view'));
+        $this->assertTrue($this->admin->can('settings.edit'));
     }
 
     public function test_manager_has_approval_permissions(): void
@@ -104,24 +86,6 @@ class RbacTest extends TestCase
         $this->assertFalse($this->employee->can('logs.view'));
     }
 
-    public function test_viewer_has_read_only_permissions(): void
-    {
-        $this->assertTrue($this->viewer->can('records.view'));
-        $this->assertTrue($this->viewer->can('records.download'));
-        $this->assertTrue($this->viewer->can('dashboard.view'));
-        $this->assertTrue($this->viewer->can('profile.manage'));
-        // Viewer must NOT have these
-        $this->assertFalse($this->viewer->can('records.create'));
-        $this->assertFalse($this->viewer->can('records.edit'));
-        $this->assertFalse($this->viewer->can('records.delete'));
-        $this->assertFalse($this->viewer->can('records.submit'));
-        $this->assertFalse($this->viewer->can('records.approve'));
-        $this->assertFalse($this->viewer->can('users.view'));
-        $this->assertFalse($this->viewer->can('departments.view'));
-        $this->assertFalse($this->viewer->can('settings.view'));
-        $this->assertFalse($this->viewer->can('logs.view'));
-    }
-
     // ── Employee record visibility ──
 
     public function test_employee_sees_own_records_in_list(): void
@@ -140,8 +104,8 @@ class RbacTest extends TestCase
 
     public function test_employee_does_not_see_other_users_records(): void
     {
-        // Record owned by super admin
-        Record::create(['title' => 'Admin Secret', 'category_id' => $this->category->id, 'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'draft']);
+        // Record owned by admin
+        Record::create(['title' => 'Admin Secret', 'category_id' => $this->category->id, 'department_id' => $this->department->id, 'uploaded_by' => $this->admin->id, 'status' => 'draft']);
         // Record owned by employee
         Record::create(['title' => 'Employee Own', 'category_id' => $this->category->id, 'department_id' => $this->department->id, 'uploaded_by' => $this->employee->id, 'status' => 'draft']);
 
@@ -158,9 +122,9 @@ class RbacTest extends TestCase
     public function test_dashboard_chart_reflects_new_records(): void
     {
         // Create a record right now
-        Record::create(['title' => 'Fresh Record', 'category_id' => $this->category->id, 'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'draft']);
+        Record::create(['title' => 'Fresh Record', 'category_id' => $this->category->id, 'department_id' => $this->department->id, 'uploaded_by' => $this->admin->id, 'status' => 'draft']);
 
-        $response = $this->withToken($this->superAdminToken)->getJson('/api/dashboard?period=today');
+        $response = $this->withToken($this->adminToken)->getJson('/api/dashboard?period=today');
         $response->assertStatus(200);
 
         $chartData = $response->json('chart_data');
@@ -225,7 +189,7 @@ class RbacTest extends TestCase
     {
         $record = Record::create([
             'title' => 'Admin Record', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'draft',
+            'department_id' => $this->department->id, 'uploaded_by' => $this->admin->id, 'status' => 'draft',
         ]);
 
         $response = $this->withToken($this->employeeToken)->putJson("/api/records/{$record->id}", ['title' => 'Hacked']);
@@ -243,55 +207,16 @@ class RbacTest extends TestCase
         $response->assertStatus(403);
     }
 
-    // ── Viewer restrictions ──
-
-    public function test_viewer_can_view_records(): void
-    {
-        $response = $this->withToken($this->viewerToken)->getJson('/api/records');
-        $response->assertStatus(200);
-    }
-
-    public function test_viewer_cannot_create_record(): void
-    {
-        $response = $this->withToken($this->viewerToken)->postJson('/api/records', [
-            'title' => 'Viewer Record', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id,
-        ]);
-        $response->assertStatus(403);
-    }
-
-    public function test_viewer_cannot_edit_record(): void
-    {
-        $record = Record::create([
-            'title' => 'Some Record', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'draft',
-        ]);
-
-        $response = $this->withToken($this->viewerToken)->putJson("/api/records/{$record->id}", ['title' => 'Changed']);
-        $response->assertStatus(403);
-    }
-
-    public function test_viewer_cannot_delete_record(): void
-    {
-        $record = Record::create([
-            'title' => 'Delete Test', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'draft',
-        ]);
-
-        $response = $this->withToken($this->viewerToken)->deleteJson("/api/records/{$record->id}");
-        $response->assertStatus(403);
-    }
-
     // ── Download endpoint ──
 
-    public function test_viewer_can_download_attachment(): void
+    public function test_admin_can_download_attachment(): void
     {
         Storage::fake('public');
         Storage::disk('public')->put('records/1/test.pdf', 'fake-pdf-content');
 
         $record = Record::create([
             'title' => 'Doc Record', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id, 'uploaded_by' => $this->superAdmin->id, 'status' => 'approved',
+            'department_id' => $this->department->id, 'uploaded_by' => $this->admin->id, 'status' => 'approved',
         ]);
 
         $document = Document::create([
@@ -299,7 +224,7 @@ class RbacTest extends TestCase
             'file_path' => 'records/1/test.pdf', 'file_type' => 'pdf', 'file_size' => 1024,
         ]);
 
-        $response = $this->withToken($this->viewerToken)->get("/api/attachments/{$document->id}/download");
+        $response = $this->withToken($this->adminToken)->get("/api/attachments/{$document->id}/download");
         $response->assertStatus(200);
         $response->assertDownload('test.pdf');
     }
@@ -316,20 +241,8 @@ class RbacTest extends TestCase
     {
         $response = $this->withToken($this->employeeToken)->postJson('/api/users', [
             'name' => 'Test', 'email' => 'test@test.com', 'password' => 'password123',
-            'department_id' => $this->department->id, 'role' => 'Viewer',
+            'department_id' => $this->department->id, 'role' => 'Employee',
         ]);
-        $response->assertStatus(403);
-    }
-
-    public function test_viewer_cannot_access_settings(): void
-    {
-        $response = $this->withToken($this->viewerToken)->getJson('/api/settings');
-        $response->assertStatus(403);
-    }
-
-    public function test_admin_cannot_access_settings(): void
-    {
-        $response = $this->withToken($this->adminToken)->getJson('/api/settings');
         $response->assertStatus(403);
     }
 
@@ -339,9 +252,15 @@ class RbacTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_super_admin_can_access_settings(): void
+    public function test_manager_cannot_access_settings(): void
     {
-        $response = $this->withToken($this->superAdminToken)->getJson('/api/settings');
+        $response = $this->withToken($this->managerToken)->getJson('/api/settings');
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_settings(): void
+    {
+        $response = $this->withToken($this->adminToken)->getJson('/api/settings');
         $response->assertStatus(200);
     }
 
@@ -350,11 +269,29 @@ class RbacTest extends TestCase
     public function test_manager_can_approve_record(): void
     {
         $record = Record::create([
-            'title' => 'Needs Approval', 'category_id' => $this->category->id,
-            'department_id' => $this->department->id, 'uploaded_by' => $this->employee->id, 'status' => 'pending',
+            'title' => 'Needs Approval', 
+            'category_id' => $this->category->id,
+            'department_id' => $this->manager->department_id, 
+            'uploaded_by' => $this->employee->id, 
+            'status' => 'pending',
         ]);
 
-        $response = $this->withToken($this->managerToken)->postJson("/api/records/{$record->id}/approve", ['comments' => 'Looks good']);
+        $response = $this->withToken($this->managerToken)->postJson("/api/records/{$record->id}/approve", ['comments' => 'Forwarding to admin']);
+        $response->assertStatus(200);
+        $this->assertEquals('in_review', $record->fresh()->status);
+    }
+
+    public function test_admin_can_final_approve_record(): void
+    {
+        $record = Record::create([
+            'title' => 'Needs Final Approval', 
+            'category_id' => $this->category->id,
+            'department_id' => $this->department->id, 
+            'uploaded_by' => $this->employee->id, 
+            'status' => 'in_review',
+        ]);
+
+        $response = $this->withToken($this->adminToken)->postJson("/api/records/{$record->id}/approve", ['comments' => 'Looks perfect']);
         $response->assertStatus(200);
         $this->assertEquals('approved', $record->fresh()->status);
     }

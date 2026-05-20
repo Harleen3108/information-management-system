@@ -16,6 +16,16 @@ class CategoryController extends Controller
      * Returns all categories with their record counts.
      * Supports ?search= to filter by name.
      */
+    private function normalizeExtensions(?string $raw): ?string
+    {
+        if (!$raw) return null;
+        $parts = array_filter(array_map(
+            fn($e) => strtolower(ltrim(trim($e), '.')),
+            explode(',', $raw)
+        ));
+        return implode(',', $parts) ?: null;
+    }
+
     public function index(Request $request)
     {
         $query = Category::withCount('records')->orderBy('name');
@@ -44,7 +54,10 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string|max:1000',
+            'allowed_extensions' => 'nullable|string|max:500',
         ]);
+
+        $validated['allowed_extensions'] = $this->normalizeExtensions($validated['allowed_extensions'] ?? null);
 
         $category = Category::create($validated);
 
@@ -82,7 +95,10 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
             'description' => 'nullable|string|max:1000',
+            'allowed_extensions' => 'nullable|string|max:500',
         ]);
+
+        $validated['allowed_extensions'] = $this->normalizeExtensions($validated['allowed_extensions'] ?? null);
 
         $category->update($validated);
         // Regenerate slug

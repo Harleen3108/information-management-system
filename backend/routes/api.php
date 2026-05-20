@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttachmentController;
+use App\Http\Controllers\Api\ManagerDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,12 +45,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/records/{record}/submit', [RecordController::class, 'submitForApproval']);
 
     // Workflow / Approvals
+    Route::post('/records/{record}/review', [ApprovalController::class, 'review']);
     Route::post('/records/{record}/approve', [ApprovalController::class, 'approve']);
     Route::post('/records/{record}/reject', [ApprovalController::class, 'reject']);
     Route::post('/records/{record}/return', [ApprovalController::class, 'returnForRevision']);
 
-    // File Downloads
+    // File Downloads & Preview
     Route::get('/attachments/{document}/download', [AttachmentController::class, 'download']);
+    Route::get('/attachments/{document}/preview', [AttachmentController::class, 'preview']);
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);
@@ -64,4 +67,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
     Route::get('/activity-logs/actions', [ActivityLogController::class, 'actions']);
+
+    // Manager Panel Routes
+    Route::prefix('manager')->group(function () {
+        Route::get('/dashboard', [ManagerDashboardController::class, 'index']);
+        Route::get('/records',   [ManagerDashboardController::class, 'records']);
+        Route::get('/team',      [ManagerDashboardController::class, 'team']);
+    });
 });

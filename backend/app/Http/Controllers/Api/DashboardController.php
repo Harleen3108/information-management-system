@@ -16,6 +16,54 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->hasRole('Employee')) {
+            $stats = [
+                'total_records' => Record::where('uploaded_by', $user->id)->count(),
+                'approved_records' => Record::where('uploaded_by', $user->id)->where('status', 'approved')->count(),
+                'pending_records' => Record::where('uploaded_by', $user->id)->where('status', 'pending')->count(),
+                'in_review_records' => Record::where('uploaded_by', $user->id)->where('status', 'in_review')->count(),
+                'rejected_records' => Record::where('uploaded_by', $user->id)->where('status', 'rejected')->count(),
+                'revision_records' => Record::where('uploaded_by', $user->id)->where('status', 'revision')->count(),
+                'draft_records' => Record::where('uploaded_by', $user->id)->where('status', 'draft')->count(),
+            ];
+
+            $pending_tasks = Record::where('uploaded_by', $user->id)
+                ->whereIn('status', ['rejected', 'revision'])
+                ->with(['category', 'approvals' => function ($query) {
+                    $query->latest();
+                }])
+                ->latest()
+                ->get();
+
+            $my_submissions = Record::where('uploaded_by', $user->id)
+                ->with('category')
+                ->latest()
+                ->take(10)
+                ->get();
+
+            $notifications = \App\Models\Notification::where('user_id', $user->id)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $recent_activity = ActivityLog::with('user')
+                ->where('user_id', $user->id)
+                ->latest()
+                ->take(10)
+                ->get();
+
+            return response()->json([
+                'is_employee' => true,
+                'stats' => $stats,
+                'pending_tasks' => $pending_tasks,
+                'my_submissions' => $my_submissions,
+                'notifications' => $notifications,
+                'recent_activity' => $recent_activity,
+            ]);
+        }
+
         $period = $request->get('period', 'today');
 
         $stats = [

@@ -10,7 +10,19 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'description'];
+    protected $fillable = ['name', 'slug', 'description', 'allowed_extensions'];
+
+    /**
+     * Returns allowed extensions as a clean array, e.g. ['pdf', 'docx'].
+     */
+    public function getAllowedExtensionsArrayAttribute(): array
+    {
+        if (empty($this->allowed_extensions)) return [];
+        return array_filter(array_map(
+            fn($e) => strtolower(ltrim(trim($e), '.')),
+            explode(',', $this->allowed_extensions)
+        ));
+    }
 
     protected static function boot()
     {

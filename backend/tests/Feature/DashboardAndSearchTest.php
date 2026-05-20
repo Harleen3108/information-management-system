@@ -128,11 +128,11 @@ class DashboardAndSearchTest extends TestCase
     public function test_users_search_by_name()
     {
         $response = $this->actingAs($this->adminUser())
-            ->getJson('/api/users?search=Super');
+            ->getJson('/api/users?search=Admin');
 
         $response->assertOk();
         $this->assertTrue(
-            collect($response->json())->contains(fn ($u) => str_contains($u['name'], 'Super'))
+            collect($response->json())->contains(fn ($u) => str_contains($u['name'], 'Admin'))
         );
     }
 
