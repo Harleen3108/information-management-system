@@ -146,7 +146,7 @@ const ManagerLayout = ({ children }) => {
           {!collapsed && <span>Profile</span>}
         </Link>
         <Link
-          to="/"
+          to="/dashboard"
           title={collapsed ? 'Main App' : undefined}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800/60 hover:text-gray-900 dark:hover:text-white transition-all ${collapsed ? 'justify-center' : ''}`}
         >
@@ -364,7 +364,7 @@ const ManagerLayout = ({ children }) => {
                         )}
                       </Link>
                       <Link
-                        to="/"
+                        to="/dashboard"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                       >

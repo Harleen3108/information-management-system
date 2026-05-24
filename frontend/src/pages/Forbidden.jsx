@@ -18,7 +18,7 @@ const Forbidden = () => {
           <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-lg font-medium text-sm hover:bg-gray-200 dark:hover:bg-zinc-700">
             <ArrowLeft className="w-4 h-4" /> Go Back
           </button>
-          <button onClick={() => navigate('/')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium text-sm shadow-sm shadow-primary/20">
+          <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium text-sm shadow-sm shadow-primary/20">
             <Home className="w-4 h-4" /> Home
           </button>
         </div>

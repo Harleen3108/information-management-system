@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import UserProfile from './pages/UserProfile';
@@ -26,6 +27,21 @@ import ManagerReports from './pages/ManagerReports';
 import ManagerLayout from './components/ManagerLayout';
 import Approvals from './pages/Approvals';
 
+/* Public home: shows Landing for guests, redirects authenticated users to /dashboard */
+const PublicHome = () => {
+    const { user, loading, hasAnyRole } = useAuth();
+    if (loading) return (
+        <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+        </div>
+    );
+    if (!user) return <Landing />;
+    if (hasAnyRole(['Manager']) && !hasAnyRole(['Admin', 'Super Admin'])) {
+        return <Navigate to="/manager/dashboard" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+};
+
 const ProtectedRoute = ({ children }) => {
     const { user, loading, hasAnyRole } = useAuth();
     if (loading) return (
@@ -37,9 +53,6 @@ const ProtectedRoute = ({ children }) => {
 
     // If only a Manager, route them to manager dashboard and layout
     if (hasAnyRole(['Manager']) && !hasAnyRole(['Admin', 'Super Admin'])) {
-        if (window.location.pathname === '/') {
-            return <Navigate to="/manager/dashboard" replace />;
-        }
         return <ManagerLayout>{children}</ManagerLayout>;
     }
 
@@ -67,10 +80,11 @@ function App() {
                 <AuthProvider>
                     <Router>
                         <Routes>
+                            <Route path="/" element={<PublicHome />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/forbidden" element={<Forbidden />} />
 
-                            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                             <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
                             <Route path="/users/:id" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
                             <Route path="/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
